@@ -10,6 +10,7 @@
 
 import type * as files from "../files.js";
 import type * as messages from "../messages.js";
+import type * as notifications from "../notifications.js";
 import type * as searchHistory from "../searchHistory.js";
 import type * as users from "../users.js";
 
@@ -22,6 +23,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   files: typeof files;
   messages: typeof messages;
+  notifications: typeof notifications;
   searchHistory: typeof searchHistory;
   users: typeof users;
 }>;

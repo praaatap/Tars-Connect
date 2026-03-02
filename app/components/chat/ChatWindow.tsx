@@ -12,7 +12,7 @@ import { useChatStore } from '@/app/store/useChatStore';
 
 interface ChatWindowProps {
     messages: any[];
-    onSendMessage: (message: string, replyTo?: string, replyToUser?: string, file?: File, mediaType?: 'image' | 'video') => void;
+    onSendMessage: (message: string, replyTo?: string, replyToUser?: string, file?: File, mediaType?: 'image' | 'video', mentions?: string[]) => void;
     onBack: () => void;
     selectedConversation?: any;
     currentUserId?: string;
@@ -48,6 +48,13 @@ export function ChatWindow({
     const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
     const [isAiLoading, setIsAiLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+    
+    // Mention autocomplete state
+    const [showMentionMenu, setShowMentionMenu] = useState(false);
+    const [mentionQuery, setMentionQuery] = useState("");
+    const [mentionCursorPosition, setMentionCursorPosition] = useState(0);
+    const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
 
     const tone = useToneStore(state => state.tone);
     const setTone = useToneStore(state => state.setTone);
@@ -94,23 +101,97 @@ export function ChatWindow({
         reader.readAsDataURL(file);
     };
 
+    // Extract mentions from text (e.g., @John Doe -> userId)
+    const extractMentions = (text: string): string[] => {
+        if (!isGroupChat || !groupMembers) return [];
+        
+        const mentionedIds: string[] = [];
+        const mentionRegex = /@(\w+(?:\s+\w+)*)/g;
+        let match;
+        
+        while ((match = mentionRegex.exec(text)) !== null) {
+            const mentionedName = match[1].toLowerCase();
+            const member = groupMembers.find((m: any) => 
+                m.name?.toLowerCase().includes(mentionedName) || 
+                m.name?.toLowerCase() === mentionedName
+            );
+            if (member && !mentionedIds.includes(member._id)) {
+                mentionedIds.push(member._id);
+            }
+        }
+        
+        return mentionedIds;
+    };
+
+    // Filter members for mention autocomplete
+    const filteredMentionMembers = groupMembers?.filter((m: any) => 
+        m._id !== currentUserId && 
+        m.name?.toLowerCase().includes(mentionQuery.toLowerCase())
+    ) || [];
+
+    // Render message text with highlighted mentions
+    const renderMessageWithMentions = (text: string, isMine: boolean) => {
+        const mentionRegex = /@(\w+(?:\s+\w+)*)/g;
+        const parts = [];
+        let lastIndex = 0;
+        let match;
+
+        while ((match = mentionRegex.exec(text)) !== null) {
+            // Add text before mention
+            if (match.index > lastIndex) {
+                parts.push(text.substring(lastIndex, match.index));
+            }
+            
+            // Add highlighted mention
+            const mentionText = match[0];
+            parts.push(
+                <span 
+                    key={match.index}
+                    className={`font-bold ${isMine ? 'text-white bg-white/20' : 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30'} px-1 rounded`}
+                >
+                    {mentionText}
+                </span>
+            );
+            
+            lastIndex = match.index + mentionText.length;
+        }
+        
+        // Add remaining text
+        if (lastIndex < text.length) {
+            parts.push(text.substring(lastIndex));
+        }
+        
+        return parts.length > 0 ? parts : text;
+    };
+
     const handleSend = async () => {
         if ((!input.trim() && !selectedFile) || isSending) return;
         const currentInput = input;
         const currentReplyTo = replyTo;
         const currentFile = selectedFile;
         const mediaType = currentFile?.type.startsWith('image/') ? 'image' : 'video';
+        
+        // Extract mentions from message
+        const mentions = extractMentions(currentInput);
 
         setInput("");
         setReplyTo(null);
         clearFileSelection();
+        setShowMentionMenu(false);
 
         if (selectedConversation?._id) {
             clearTyping({ conversationId: selectedConversation._id });
         }
 
         try {
-            await onSendMessage(currentInput, currentReplyTo?.body, currentReplyTo?.user, currentFile || undefined, mediaType);
+            await onSendMessage(
+                currentInput, 
+                currentReplyTo?.body, 
+                currentReplyTo?.user, 
+                currentFile || undefined, 
+                mediaType,
+                mentions.length > 0 ? mentions : undefined
+            );
         } catch (err) {
             console.error("Failed to send:", err);
         }
@@ -344,7 +425,7 @@ export function ChatWindow({
                                             )}
 
                                             <p className={`text-[14px] leading-relaxed whitespace-pre-wrap break-all ${msg.deleted ? 'italic text-opacity-70' : ''}`}>
-                                                {msg.body}
+                                                {msg.deleted ? msg.body : renderMessageWithMentions(msg.body, isMine)}
                                             </p>
 
                                             <div className={`text-[10px] mt-1 flex justify-end gap-2 items-center ${isMine ? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'}`}>
@@ -472,7 +553,39 @@ export function ChatWindow({
                 </div>
             )}
 
-            <div className="border-t border-zinc-200 dark:border-zinc-800/50 bg-white dark:bg-zinc-950 px-4 py-3 shrink-0">
+            <div className="border-t border-zinc-200 dark:border-zinc-800/50 bg-white dark:bg-zinc-950 px-4 py-3 shrink-0 relative">
+                {/* Mention Autocomplete Menu */}
+                {showMentionMenu && isGroupChat && filteredMentionMembers.length > 0 && (
+                    <div className="absolute bottom-full left-4 right-4 mb-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+                        {filteredMentionMembers.map((member: any, index: number) => (
+                            <button
+                                key={member._id}
+                                onClick={() => {
+                                    const beforeAt = input.substring(0, mentionCursorPosition - mentionQuery.length - 1);
+                                    const afterCursor = input.substring(mentionCursorPosition);
+                                    const newInput = `${beforeAt}@${member.name} ${afterCursor}`;
+                                    setInput(newInput);
+                                    setShowMentionMenu(false);
+                                    setMentionQuery("");
+                                    inputRef.current?.focus();
+                                }}
+                                className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors ${
+                                    index === selectedMentionIndex ? 'bg-zinc-100 dark:bg-zinc-700' : ''
+                                }`}
+                            >
+                                {member.imageUrl ? (
+                                    <img src={member.imageUrl} alt={member.name} className="w-8 h-8 rounded-full object-cover" />
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                                        {member.name?.[0] || 'U'}
+                                    </div>
+                                )}
+                                <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{member.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
+                
                 <div className="flex items-center gap-2 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 px-3 py-2">
                     <input
                         ref={fileInputRef}
@@ -508,15 +621,70 @@ export function ChatWindow({
                         <option value="Sarcastic">Sarcastic</option>
                     </select>
                     <input
+                        ref={inputRef}
                         className="flex-1 bg-transparent text-[14px] text-zinc-700 dark:text-zinc-200 outline-none placeholder-zinc-400 dark:placeholder-zinc-500"
-                        placeholder="Type a message..."
+                        placeholder={isGroupChat ? "Type a message... (@ to mention)" : "Type a message..."}
                         value={input}
                         onChange={(e) => {
-                            setInput(e.target.value);
+                            const newValue = e.target.value;
+                            const cursorPos = e.target.selectionStart || 0;
+                            setInput(newValue);
                             handleTyping();
+                            
+                            // Detect @ for mentions in group chats
+                            if (isGroupChat) {
+                                const textBeforeCursor = newValue.substring(0, cursorPos);
+                                const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+                                
+                                if (lastAtIndex !== -1 && lastAtIndex === cursorPos - 1) {
+                                    // Just typed @
+                                    setShowMentionMenu(true);
+                                    setMentionQuery("");
+                                    setMentionCursorPosition(cursorPos);
+                                    setSelectedMentionIndex(0);
+                                } else if (lastAtIndex !== -1 && cursorPos > lastAtIndex) {
+                                    // Typing after @
+                                    const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+                                    if (!textAfterAt.includes(' ')) {
+                                        setShowMentionMenu(true);
+                                        setMentionQuery(textAfterAt);
+                                        setMentionCursorPosition(cursorPos);
+                                    } else {
+                                        setShowMentionMenu(false);
+                                    }
+                                } else {
+                                    setShowMentionMenu(false);
+                                }
+                            }
                         }}
                         onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
+                            if (showMentionMenu && filteredMentionMembers.length > 0) {
+                                if (e.key === 'ArrowDown') {
+                                    e.preventDefault();
+                                    setSelectedMentionIndex((prev) => 
+                                        prev < filteredMentionMembers.length - 1 ? prev + 1 : prev
+                                    );
+                                } else if (e.key === 'ArrowUp') {
+                                    e.preventDefault();
+                                    setSelectedMentionIndex((prev) => prev > 0 ? prev - 1 : 0);
+                                } else if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    const selectedMember = filteredMentionMembers[selectedMentionIndex];
+                                    if (selectedMember) {
+                                        const beforeAt = input.substring(0, mentionCursorPosition - mentionQuery.length - 1);
+                                        const afterCursor = input.substring(mentionCursorPosition);
+                                        const newInput = `${beforeAt}@${selectedMember.name} ${afterCursor}`;
+                                        setInput(newInput);
+                                        setShowMentionMenu(false);
+                                        setMentionQuery("");
+                                    }
+                                    return;
+                                } else if (e.key === 'Escape') {
+                                    setShowMentionMenu(false);
+                                    setMentionQuery("");
+                                    return;
+                                }
+                            } else if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault();
                                 handleSend();
                             }

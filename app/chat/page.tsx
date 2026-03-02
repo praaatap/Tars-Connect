@@ -207,7 +207,8 @@ function ChatContent() {
     replyTo?: string, 
     replyToUser?: string,
     file?: File,
-    mediaType?: 'image' | 'video'
+    mediaType?: 'image' | 'video',
+    mentions?: string[]
   ) => {
     if (!selectedConversationId || (!body.trim() && !file) || isSending) return;
     setIsSending(true);
@@ -233,7 +234,8 @@ function ChatContent() {
         replyTo, 
         replyToUser,
         mediaStorageId,
-        mediaType
+        mediaType,
+        mentions: mentions as any
       });
     } catch (err) {
       setError("Failed to send message.");

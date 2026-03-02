@@ -5,10 +5,14 @@ import { UserButton } from "@clerk/nextjs";
 import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { SignInButton } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
+import { useState } from "react";
+import { NotificationsPanel } from "./chat/NotificationsPanel";
 
 export function MainHeader() {
     const pendingInvites = useQuery((api as any).messages.getPendingInvites, {});
     const inviteCount = pendingInvites?.length || 0;
+    const unreadNotifications = useQuery(api.notifications.getUnreadCount, {}) || 0;
+    const [isNotificationsPanelOpen, setIsNotificationsPanelOpen] = useState(false);
 
     return (
         <header className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800/50 bg-white dark:bg-zinc-950 px-5 py-3 shrink-0 z-50">
@@ -30,6 +34,21 @@ export function MainHeader() {
             </div>
             <div className="flex items-center gap-3">
                 <Authenticated>
+                    {/* Notifications Button */}
+                    <button
+                        onClick={() => setIsNotificationsPanelOpen(!isNotificationsPanelOpen)}
+                        className="relative p-2 text-zinc-600 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950 rounded-lg transition-all"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        {unreadNotifications > 0 && (
+                            <span className="absolute -top-1 -right-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                                {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                            </span>
+                        )}
+                    </button>
+                    
                     <UserButton afterSignOutUrl="/" />
                 </Authenticated>
                 <Unauthenticated>
@@ -40,6 +59,12 @@ export function MainHeader() {
                     </SignInButton>
                 </Unauthenticated>
             </div>
+            
+            {/* Notifications Panel */}
+            <NotificationsPanel 
+                isOpen={isNotificationsPanelOpen} 
+                onClose={() => setIsNotificationsPanelOpen(false)}
+            />
         </header>
     );
 }

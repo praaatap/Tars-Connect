@@ -46,9 +46,31 @@ export default defineSchema({
     mediaUrl: v.optional(v.string()),
     mediaType: v.optional(v.union(v.literal("image"), v.literal("video"))),
     mediaStorageId: v.optional(v.id("_storage")),
+    mentions: v.optional(v.array(v.id("users"))),
   })
     .index("by_conversation", ["conversationId"])
     .index("by_conversation_createdAt", ["conversationId", "createdAt"]),
+
+  notifications: defineTable({
+    userId: v.id("users"),
+    type: v.union(
+      v.literal("mention"),
+      v.literal("message"),
+      v.literal("group_invite"),
+      v.literal("chat_invite"),
+      v.literal("group_added")
+    ),
+    read: v.boolean(),
+    createdAt: v.number(),
+    fromUserId: v.optional(v.id("users")),
+    conversationId: v.optional(v.id("conversations")),
+    messageId: v.optional(v.id("messages")),
+    inviteId: v.optional(v.string()),
+    title: v.string(),
+    body: v.optional(v.string()),
+  })
+    .index("by_user_read_createdAt", ["userId", "read", "createdAt"])
+    .index("by_user_createdAt", ["userId", "createdAt"]),
 
   groupChatInvites: defineTable({
     conversationId: v.id("conversations"),

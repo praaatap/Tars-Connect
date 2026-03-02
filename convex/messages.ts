@@ -323,6 +323,7 @@ export const sendMessage = mutation({
     replyToUser: v.optional(v.string()),
     mediaStorageId: v.optional(v.id("_storage")),
     mediaType: v.optional(v.union(v.literal("image"), v.literal("video"))),
+    mentions: v.optional(v.array(v.id("users"))),
   },
   handler: async (ctx, args) => {
     const currentUser = await initializeOrUpdateUser(ctx);
@@ -353,7 +354,58 @@ export const sendMessage = mutation({
       mediaUrl,
       mediaType: args.mediaType,
       mediaStorageId: args.mediaStorageId,
+      mentions: args.mentions,
     });
+
+    // Get conversation details
+    const conversation = await ctx.db.get(args.conversationId);
+    
+    // Create notifications for mentions
+    if (args.mentions && args.mentions.length > 0) {
+      for (const mentionedUserId of args.mentions) {
+        // Don't notify yourself
+        if (mentionedUserId === currentUser._id) continue;
+        
+        await ctx.db.insert("notifications", {
+          userId: mentionedUserId,
+          type: "mention",
+          title: `${currentUser.name} mentioned you`,
+          body: normalized.substring(0, 100),
+          fromUserId: currentUser._id,
+          conversationId: args.conversationId,
+          messageId,
+          read: false,
+          createdAt: now,
+        });
+      }
+    }
+    
+    // Create notifications for other participants (if not mentioned)
+    if (conversation) {
+      for (const participantId of conversation.participants) {
+        // Skip sender and already mentioned users
+        if (participantId === currentUser._id) continue;
+        if (args.mentions?.includes(participantId)) continue;
+        
+        const conversationName = conversation.isGroup 
+          ? conversation.name 
+          : currentUser.name;
+        
+        await ctx.db.insert("notifications", {
+          userId: participantId,
+          type: "message",
+          title: conversation.isGroup 
+            ? `${currentUser.name} in ${conversationName}` 
+            : `New message from ${currentUser.name}`,
+          body: normalized.substring(0, 100) || (args.mediaType === 'image' ? '📷 Photo' : '🎥 Video'),
+          fromUserId: currentUser._id,
+          conversationId: args.conversationId,
+          messageId,
+          read: false,
+          createdAt: now,
+        });
+      }
+    }
 
     // Update conversation's last message
     const lastMessageText = normalized || (args.mediaType === 'image' ? '📷 Photo' : '🎥 Video');
