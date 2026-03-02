@@ -228,6 +228,8 @@ export const getConversationById = query({
       isGroup: !!conv.isGroup,
       isOnline,
       memberCount: conv.participants.length,
+      inviteToken: conv.inviteToken,
+      inviteEnabled: conv.inviteEnabled,
     };
   },
 });
@@ -924,6 +926,157 @@ export const rejectChatInvite = mutation({
     await ctx.db.patch(args.inviteId, {
       status: "rejected",
       respondedAt: Date.now(),
+    });
+  },
+});
+
+// ======= GROUP INVITE LINK =======
+
+// Generate a unique invite link for a group
+export const generateGroupInviteLink = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await initializeOrUpdateUser(ctx);
+    const conversation = await ctx.db.get(args.conversationId);
+
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    if (!conversation.isGroup) {
+      throw new Error("Only group chats can have invite links");
+    }
+
+    // Check if user is a member
+    if (!conversation.participants.includes(currentUser._id)) {
+      throw new Error("You must be a member to generate an invite link");
+    }
+
+    // Generate a random token
+    const token = Math.random().toString(36).substring(2, 15) + 
+                  Math.random().toString(36).substring(2, 15);
+
+    await ctx.db.patch(args.conversationId, {
+      inviteToken: token,
+      inviteEnabled: true,
+    });
+
+    return token;
+  },
+});
+
+// Get group by invite token (public query)
+export const getGroupByInviteToken = query({
+  args: {
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const conversations = await ctx.db
+      .query("conversations")
+      .withIndex("by_invite_token", (q: any) => q.eq("inviteToken", args.token))
+      .collect();
+
+    const conversation = conversations[0];
+    
+    if (!conversation || !conversation.inviteEnabled) {
+      return null;
+    }
+
+    const memberCount = conversation.participants.length;
+
+    return {
+      _id: conversation._id,
+      name: conversation.name || "Group Chat",
+      memberCount,
+      isGroup: conversation.isGroup,
+    };
+  },
+});
+
+// Join a group via invite link
+export const joinGroupViaLink = mutation({
+  args: {
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await initializeOrUpdateUser(ctx);
+    
+    const conversations = await ctx.db
+      .query("conversations")
+      .withIndex("by_invite_token", (q: any) => q.eq("inviteToken", args.token))
+      .collect();
+
+    const conversation = conversations[0];
+
+    if (!conversation) {
+      throw new Error("Invalid invite link");
+    }
+
+    if (!conversation.inviteEnabled) {
+      throw new Error("This invite link has been disabled");
+    }
+
+    if (!conversation.isGroup) {
+      throw new Error("This link is not for a group chat");
+    }
+
+    // Check if already a member
+    if (conversation.participants.includes(currentUser._id)) {
+      return conversation._id; // Already a member, just return the ID
+    }
+
+    // Add user to conversation
+    const updatedParticipants = [...conversation.participants, currentUser._id];
+    await ctx.db.patch(conversation._id, {
+      participants: updatedParticipants,
+    });
+
+    // Create notification for existing members
+    for (const participantId of conversation.participants) {
+      if (participantId === currentUser._id) continue;
+      
+      await ctx.db.insert("notifications", {
+        userId: participantId,
+        type: "group_added",
+        title: `${currentUser.name} joined ${conversation.name}`,
+        body: "via invite link",
+        fromUserId: currentUser._id,
+        conversationId: conversation._id,
+        read: false,
+        createdAt: Date.now(),
+      });
+    }
+
+    return conversation._id;
+  },
+});
+
+// Toggle invite link enabled/disabled
+export const toggleGroupInviteLink = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    enabled: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await initializeOrUpdateUser(ctx);
+    const conversation = await ctx.db.get(args.conversationId);
+
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    if (!conversation.isGroup) {
+      throw new Error("Only group chats can have invite links");
+    }
+
+    if (!conversation.participants.includes(currentUser._id)) {
+      throw new Error("You must be a member to manage invite links");
+    }
+
+    await ctx.db.patch(args.conversationId, {
+      inviteEnabled: args.enabled,
     });
   },
 });

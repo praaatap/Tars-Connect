@@ -32,7 +32,11 @@ export default defineSchema({
     typing: v.optional(v.record(v.string(), v.number())),
     lastReadAt: v.optional(v.record(v.string(), v.number())),
     hiddenBy: v.optional(v.array(v.id("users"))),
-  }).index("by_participants", ["participants"]),
+    inviteToken: v.optional(v.string()),
+    inviteEnabled: v.optional(v.boolean()),
+  })
+    .index("by_participants", ["participants"])
+    .index("by_invite_token", ["inviteToken"]),
 
   messages: defineTable({
     conversationId: v.id("conversations"),

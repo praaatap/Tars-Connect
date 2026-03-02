@@ -130,6 +130,8 @@ function ChatContent() {
   const acceptChatInvite = useMutation((api as any).messages.acceptChatInvite);
   const rejectChatInvite = useMutation((api as any).messages.rejectChatInvite);
   const generateUploadUrl = useMutation((api as any).files.generateUploadUrl);
+  const generateGroupInviteLink = useMutation((api as any).messages.generateGroupInviteLink);
+  const toggleGroupInviteLink = useMutation((api as any).messages.toggleGroupInviteLink);
 
   useEffect(() => {
     initializeUser();
@@ -254,6 +256,24 @@ function ChatContent() {
     await sendGroupInvite({ conversationId: selectedConversationId as any, invitedUserIds: userIds as any, message });
   };
 
+  const handleGenerateInviteLink = async () => {
+    if (!selectedConversationId) return;
+    try {
+      await generateGroupInviteLink({ conversationId: selectedConversationId as any });
+    } catch (err) {
+      console.error("Failed to generate invite link:", err);
+    }
+  };
+
+  const handleToggleInviteLink = async (enabled: boolean) => {
+    if (!selectedConversationId) return;
+    try {
+      await toggleGroupInviteLink({ conversationId: selectedConversationId as any, enabled });
+    } catch (err) {
+      console.error("Failed to toggle invite link:", err);
+    }
+  };
+
   const handleSendChatInvite = async (userId: string) => {
     try {
       await sendChatInvite({ toUserId: userId as any });
@@ -290,7 +310,7 @@ function ChatContent() {
   const displayItems = searchValue.trim() !== "" ? searchItems : chatItems;
 
   return (
-    <main className="flex h-full flex-col bg-zinc-100 dark:bg-zinc-950 relative">
+    <main className="flex h-full flex-col bg-zinc-100 dark:bg-zinc-950 relative overflow-hidden">
       <div className="flex min-h-0 flex-1 relative overflow-hidden">
         <div
           className={`lg:flex shrink-0 flex-col border-r border-zinc-200 dark:border-zinc-800/50 bg-white dark:bg-zinc-950 group/sidebar relative ${selectedConversationId ? 'hidden' : 'flex w-full'}`}
@@ -384,6 +404,10 @@ function ChatContent() {
           allUsers={allUsers ?? []}
           onClose={() => setIsAddMembersOpen(false)}
           onInvite={handleSendGroupInvites}
+          inviteToken={selectedConversationData?.inviteToken}
+          inviteEnabled={selectedConversationData?.inviteEnabled}
+          onGenerateInviteLink={handleGenerateInviteLink}
+          onToggleInviteLink={handleToggleInviteLink}
         />
       )}
 

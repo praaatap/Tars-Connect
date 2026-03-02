@@ -37,12 +37,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 min-h-screen flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 h-screen flex flex-col overflow-hidden`}
       >
         <ThemeProvider>
           <ConvexClientProvider>
             {appbar}
-            <div className="flex-1 min-h-0">{children}</div>
+            <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
           </ConvexClientProvider>
         </ThemeProvider>
       </body>
