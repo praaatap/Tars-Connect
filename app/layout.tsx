@@ -1,8 +1,7 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
-import { ThemeProvider } from "./components/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,15 +36,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 h-screen flex flex-col overflow-hidden`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-zinc-900 h-screen flex flex-col overflow-hidden`}
       >
-        <ThemeProvider>
-          <ConvexClientProvider>
-            {appbar}
-            <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-          </ConvexClientProvider>
-        </ThemeProvider>
+        <ConvexClientProvider>
+          {appbar}
+          <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+        </ConvexClientProvider>
       </body>
     </html>
   );
 }
+

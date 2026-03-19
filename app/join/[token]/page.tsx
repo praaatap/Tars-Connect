@@ -44,23 +44,23 @@ function JoinGroupContent() {
 
   if (groupInfo === undefined) {
     return (
-      <div className="h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 dark:border-zinc-800 border-t-indigo-600"></div>
+      <div className="h-full flex items-center justify-center bg-zinc-100">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 border-t-indigo-600"></div>
       </div>
     );
   }
 
   if (groupInfo === null) {
     return (
-      <div className="h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 p-6">
-        <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-xl p-8 text-center">
-          <div className="h-16 w-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="h-full flex items-center justify-center bg-zinc-100 p-6">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 text-center">
+          <div className="h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Invalid Invite Link</h1>
-          <p className="text-zinc-600 dark:text-zinc-400 mb-6">
+          <h1 className="text-2xl font-bold text-zinc-900 mb-2">Invalid Invite Link</h1>
+          <p className="text-zinc-600 mb-6">
             This invite link is invalid or has been disabled.
           </p>
           <button
@@ -75,8 +75,8 @@ function JoinGroupContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 p-6">
-      <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-xl overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-zinc-100 p-6">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl overflow-hidden">
         <div className="bg-indigo-600 p-8 text-center">
           <div className="h-16 w-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,16 +88,16 @@ function JoinGroupContent() {
 
         <div className="p-8">
           <div className="text-center mb-6">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
+            <h2 className="text-xl font-bold text-zinc-900 mb-2">
               {groupInfo.name}
             </h2>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="text-sm text-zinc-600">
               {groupInfo.memberCount} {groupInfo.memberCount === 1 ? 'member' : 'members'}
             </p>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-700 dark:text-red-400">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
               {error}
             </div>
           )}
@@ -112,7 +112,7 @@ function JoinGroupContent() {
 
           <button
             onClick={() => router.push("/")}
-            className="w-full py-3 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-xl font-semibold hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+            className="w-full py-3 border border-zinc-200 text-zinc-700 rounded-xl font-semibold hover:bg-zinc-50 transition-colors"
           >
             Cancel
           </button>
@@ -124,15 +124,15 @@ function JoinGroupContent() {
 
 function UnauthenticatedView() {
   return (
-    <div className="h-full flex items-center justify-center bg-zinc-100 dark:bg-zinc-950 p-6">
-      <div className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl shadow-xl p-8 text-center">
-        <div className="h-16 w-16 bg-indigo-100 dark:bg-indigo-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg className="w-8 h-8 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div className="h-full flex items-center justify-center bg-zinc-100 p-6">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 text-center">
+        <div className="h-16 w-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">Sign In Required</h1>
-        <p className="text-zinc-600 dark:text-zinc-400 mb-6">
+        <h1 className="text-2xl font-bold text-zinc-900 mb-2">Sign In Required</h1>
+        <p className="text-zinc-600 mb-6">
           Please sign in to join this group.
         </p>
         <SignInButton mode="modal">

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
@@ -42,9 +42,7 @@ function ChatContent() {
     uiScale,
     setUIScale,
     isSettingsOpen,
-    setIsSettingsOpen,
-    theme,
-    setTheme
+    setIsSettingsOpen
   } = useUIStore();
   
   // Chat Store - Central state management
@@ -310,10 +308,10 @@ function ChatContent() {
   const displayItems = searchValue.trim() !== "" ? searchItems : chatItems;
 
   return (
-    <main className="flex h-full flex-col bg-zinc-100 dark:bg-zinc-950 relative overflow-hidden">
+    <main className="flex h-full flex-col bg-zinc-100 relative overflow-hidden">
       <div className="flex min-h-0 flex-1 relative overflow-hidden">
         <div
-          className={`lg:flex shrink-0 flex-col border-r border-zinc-200 dark:border-zinc-800/50 bg-white dark:bg-zinc-950 group/sidebar relative ${selectedConversationId ? 'hidden' : 'flex w-full'}`}
+          className={`lg:flex shrink-0 flex-col border-r border-zinc-200 bg-white group/sidebar relative ${selectedConversationId ? 'hidden' : 'flex w-full'}`}
           style={{ width: isLargeScreen ? `${sidebarWidth}px` : undefined }}
         >
           <GroupInvitesPanel
@@ -373,9 +371,9 @@ function ChatContent() {
               }}
             />
           ) : (
-            <div className="hidden lg:flex flex-1 flex-col items-center justify-center bg-[#efeae2]/30 dark:bg-zinc-800/30 space-y-4">
-              <div className="h-20 w-20 bg-white dark:bg-zinc-800 rounded-full flex items-center justify-center text-3xl shadow-sm">💬</div>
-              <p className="text-zinc-500 dark:text-zinc-400 font-medium">Select a chat to start messaging</p>
+            <div className="hidden lg:flex flex-1 flex-col items-center justify-center bg-[#efeae2]/30 space-y-4">
+              <div className="h-20 w-20 bg-white rounded-full flex items-center justify-center text-2xl font-bold text-indigo-600 shadow-sm">Chat</div>
+              <p className="text-zinc-500 font-medium">Select a chat to start messaging</p>
             </div>
           )}
         </div>
@@ -416,8 +414,6 @@ function ChatContent() {
         onClose={() => setIsSettingsOpen(false)}
         uiScale={uiScale}
         onScaleChange={setUIScale}
-        theme={theme}
-        onThemeChange={setTheme}
       />
     </main>
   );
