@@ -7,7 +7,7 @@ export default function PrivacyPolicyPage() {
           <div className="bg-indigo-600 px-8 py-10 text-white">
             <h1 className="text-3xl md:text-4xl font-black tracking-tight">Privacy Policy</h1>
             <p className="mt-3 max-w-2xl text-indigo-100 text-sm md:text-base">
-              How Tars Connect collects, uses, and protects your data while you use messaging features.
+              How Pulse Connect collects, uses, and protects your data while you use messaging features.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default function PrivacyPolicyPage() {
               <section className="space-y-2">
                 <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">6. Contact</h2>
                 <p>
-                  For privacy-related questions, contact: privacy@tarssocial.com
+                  For privacy-related questions, contact: privacy@pulseconnect.app
                 </p>
               </section>
 

@@ -11,7 +11,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setIsMounted(true);
 
     // Initial check: if no theme is set yet (e.g. first time), try to match system
-    const stored = localStorage.getItem('tars-ui-storage');
+    const stored = localStorage.getItem('pulse-ui-storage');
     let currentTheme = theme;
 
     if (!stored) {

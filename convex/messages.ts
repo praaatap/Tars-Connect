@@ -298,6 +298,26 @@ export const getMessagesForConversation = query({
           });
         }
 
+        let pollResult = undefined;
+        if (msg.poll) {
+          const votesByOption = msg.poll.options.map((option: any) => {
+            const voteCount = Object.values(msg.poll?.votes || {}).filter((value: any) => value === option.id).length;
+            return {
+              id: option.id,
+              text: option.text,
+              count: voteCount,
+            };
+          });
+
+          pollResult = {
+            question: msg.poll.question,
+            options: votesByOption,
+            totalVotes: Object.keys(msg.poll.votes || {}).length,
+            userVote: currentUser ? msg.poll.votes?.[currentUser._id.toString()] : undefined,
+            allowMultipleVotes: !!msg.poll.allowMultipleVotes,
+          };
+        }
+
         return {
           ...msg,
           body: msg.deleted ? "This message was deleted" : msg.body,
@@ -310,6 +330,7 @@ export const getMessagesForConversation = query({
           userReaction: currentUser ? msg.reactions?.[currentUser._id] : undefined,
           replyTo: msg.replyTo,
           replyToUser: msg.replyToUser,
+          poll: pollResult,
         };
       })
     );
@@ -351,6 +372,7 @@ export const sendMessage = mutation({
       senderId: currentUser._id,
       body: normalized || (args.mediaType ? `Sent ${args.mediaType}` : ''),
       createdAt: now,
+      messageType: "text",
       replyTo: args.replyTo,
       replyToUser: args.replyToUser,
       mediaUrl,
@@ -429,6 +451,117 @@ export const sendMessage = mutation({
     });
 
     return messageId;
+  },
+});
+
+export const createPollMessage = mutation({
+  args: {
+    conversationId: v.id("conversations"),
+    question: v.string(),
+    options: v.array(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await initializeOrUpdateUser(ctx);
+    const conversation = await ctx.db.get(args.conversationId);
+
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    if (!conversation.participants.includes(currentUser._id)) {
+      throw new Error("You are not a participant in this conversation");
+    }
+
+    const question = args.question.trim();
+    const normalizedOptions = args.options.map((option) => option.trim()).filter((option) => option.length > 0);
+
+    if (!question) {
+      throw new Error("Poll question is required");
+    }
+
+    const uniqueOptions = Array.from(new Set(normalizedOptions));
+    if (uniqueOptions.length < 2) {
+      throw new Error("A poll needs at least 2 options");
+    }
+
+    const now = Date.now();
+    const pollOptions = uniqueOptions.slice(0, 6).map((text, index) => ({
+      id: `opt_${index + 1}`,
+      text,
+    }));
+
+    const messageId = await ctx.db.insert("messages", {
+      conversationId: args.conversationId,
+      senderId: currentUser._id,
+      body: `📊 ${question}`,
+      createdAt: now,
+      messageType: "poll",
+      poll: {
+        question,
+        options: pollOptions,
+        votes: {},
+        allowMultipleVotes: false,
+      },
+    });
+
+    await ctx.db.patch(args.conversationId, {
+      lastMessage: `📊 Poll: ${question}`,
+      lastMessageAt: now,
+      lastMessageSenderId: currentUser._id,
+      typing: {
+        ...(conversation.typing || {}),
+        [currentUser._id]: 0,
+      },
+      lastReadAt: {
+        ...(conversation.lastReadAt || {}),
+        [currentUser._id]: now,
+      },
+      hiddenBy: [],
+    });
+
+    return messageId;
+  },
+});
+
+export const voteOnPoll = mutation({
+  args: {
+    messageId: v.id("messages"),
+    optionId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const currentUser = await initializeOrUpdateUser(ctx);
+    const message: any = await ctx.db.get(args.messageId);
+
+    if (!message || message.messageType !== "poll" || !message.poll) {
+      throw new Error("Poll message not found");
+    }
+
+    const conversation: any = await ctx.db.get(message.conversationId);
+    if (!conversation || !conversation.participants.includes(currentUser._id)) {
+      throw new Error("Not allowed to vote in this poll");
+    }
+
+    const hasOption = message.poll.options.some((option: any) => option.id === args.optionId);
+    if (!hasOption) {
+      throw new Error("Invalid poll option");
+    }
+
+    const userKey = currentUser._id.toString();
+    const existingVote = message.poll.votes?.[userKey];
+    const updatedVotes = { ...(message.poll.votes || {}) };
+
+    if (existingVote === args.optionId) {
+      delete updatedVotes[userKey];
+    } else {
+      updatedVotes[userKey] = args.optionId;
+    }
+
+    await ctx.db.patch(args.messageId, {
+      poll: {
+        ...message.poll,
+        votes: updatedVotes,
+      },
+    });
   },
 });
 

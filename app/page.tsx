@@ -26,7 +26,7 @@ export default function Home() {
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
               💬
             </span>
-            Tars Social
+            Pulse Connect
           </div>
           <div className="relative z-10 max-w-xl space-y-6">
             <h1 className="text-6xl font-bold leading-[1.05] tracking-tight text-white">
@@ -48,7 +48,7 @@ export default function Home() {
             </div>
           </div>
           <div className="relative z-10 flex gap-6 text-sm text-white/80">
-            <span>© 2026 Tars Inc.</span>
+            <span>© 2026 Pulse Labs</span>
             <Link href="/privacy-policy" className="hover:text-white">
               Privacy Policy
             </Link>

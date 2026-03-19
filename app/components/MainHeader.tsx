@@ -21,7 +21,7 @@ export function MainHeader() {
                     <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 dark:bg-indigo-600 text-white text-sm">
                         💬
                     </span>
-                    Tars Connect
+                    Pulse Connect
                 </Link>
             </div>
 

@@ -18,7 +18,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-2">
             <h2 className="text-lg font-semibold text-zinc-900">1. Acceptance of Terms</h2>
             <p>
-              By using Tars Social, you agree to these Terms of Service and all
+              By using Pulse Connect, you agree to these Terms of Service and all
               applicable laws and regulations.
             </p>
           </section>
@@ -43,7 +43,7 @@ export default function TermsOfServicePage() {
             <h2 className="text-lg font-semibold text-zinc-900">4. Intellectual Property</h2>
             <p>
               The service, including software, branding, and content provided by us,
-              remains the intellectual property of Tars Social and its licensors.
+              remains the intellectual property of Pulse Connect and its licensors.
             </p>
           </section>
 
@@ -66,7 +66,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-2">
             <h2 className="text-lg font-semibold text-zinc-900">7. Contact</h2>
             <p>
-              For terms-related questions, contact: legal@tarssocial.com
+              For terms-related questions, contact: legal@pulseconnect.app
             </p>
           </section>
 

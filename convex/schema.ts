@@ -51,6 +51,20 @@ export default defineSchema({
     mediaType: v.optional(v.union(v.literal("image"), v.literal("video"))),
     mediaStorageId: v.optional(v.id("_storage")),
     mentions: v.optional(v.array(v.id("users"))),
+    messageType: v.optional(v.union(v.literal("text"), v.literal("poll"))),
+    poll: v.optional(
+      v.object({
+        question: v.string(),
+        options: v.array(
+          v.object({
+            id: v.string(),
+            text: v.string(),
+          })
+        ),
+        votes: v.record(v.string(), v.string()),
+        allowMultipleVotes: v.optional(v.boolean()),
+      })
+    ),
   })
     .index("by_conversation", ["conversationId"])
     .index("by_conversation_createdAt", ["conversationId", "createdAt"]),

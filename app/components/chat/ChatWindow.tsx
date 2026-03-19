@@ -47,6 +47,9 @@ export function ChatWindow({
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
     const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
     const [isAiLoading, setIsAiLoading] = useState(false);
+    const [isPollComposerOpen, setIsPollComposerOpen] = useState(false);
+    const [pollQuestion, setPollQuestion] = useState("");
+    const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     
@@ -66,6 +69,8 @@ export function ChatWindow({
     const clearTyping = useMutation((api as any).messages.clearTyping);
     const deleteMessage = useMutation((api as any).messages.deleteMessage);
     const toggleReaction = useMutation((api as any).messages.toggleReaction);
+    const createPollMessage = useMutation((api as any).messages.createPollMessage);
+    const voteOnPoll = useMutation((api as any).messages.voteOnPoll);
 
     const handleTyping = () => {
         if (!selectedConversation?._id) return;
@@ -248,6 +253,45 @@ export function ChatWindow({
             setAiSuggestions([]);
         } finally {
             setIsAiLoading(false);
+        }
+    };
+
+    const resetPollComposer = () => {
+        setPollQuestion("");
+        setPollOptions(["", ""]);
+        setIsPollComposerOpen(false);
+    };
+
+    const handleCreatePoll = async () => {
+        if (!selectedConversation?._id || isSending) return;
+
+        const question = pollQuestion.trim();
+        const options = pollOptions.map((option) => option.trim()).filter((option) => option.length > 0);
+
+        if (!question || options.length < 2) return;
+
+        try {
+            await createPollMessage({
+                conversationId: selectedConversation._id,
+                question,
+                options,
+            });
+            resetPollComposer();
+            setTimeout(() => {
+                if (scrollRef.current) {
+                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                }
+            }, 100);
+        } catch (err) {
+            console.error("Failed to create poll:", err);
+        }
+    };
+
+    const handleVote = async (messageId: string, optionId: string) => {
+        try {
+            await voteOnPoll({ messageId: messageId as any, optionId });
+        } catch (err) {
+            console.error("Failed to vote on poll:", err);
         }
     };
 
@@ -462,9 +506,42 @@ export function ChatWindow({
                                                 </div>
                                             )}
 
-                                            <p className={`text-[14px] leading-relaxed whitespace-pre-wrap break-all ${msg.deleted ? 'italic text-opacity-70' : ''}`}>
-                                                {msg.deleted ? msg.body : renderMessageWithMentions(msg.body, isMine)}
-                                            </p>
+                                            {msg.messageType === 'poll' && msg.poll ? (
+                                                <div className={`rounded-xl border p-3 mt-1 ${isMine ? 'border-white/30 bg-white/10' : 'border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50'}`}>
+                                                    <p className={`text-[13px] font-semibold mb-2 ${isMine ? 'text-white' : 'text-zinc-900 dark:text-zinc-100'}`}>
+                                                        📊 {msg.poll.question}
+                                                    </p>
+                                                    <div className="space-y-1.5">
+                                                        {msg.poll.options.map((option: any) => {
+                                                            const percentage = msg.poll.totalVotes > 0
+                                                                ? Math.round((option.count / msg.poll.totalVotes) * 100)
+                                                                : 0;
+                                                            const isSelected = msg.poll.userVote === option.id;
+                                                            return (
+                                                                <button
+                                                                    key={option.id}
+                                                                    onClick={() => handleVote(msg._id, option.id)}
+                                                                    className={`w-full text-left rounded-lg border px-2 py-1.5 transition-colors ${isSelected
+                                                                        ? (isMine ? 'border-white bg-white/20' : 'border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/30')
+                                                                        : (isMine ? 'border-white/30 hover:bg-white/10' : 'border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800')}`}
+                                                                >
+                                                                    <div className="flex items-center justify-between gap-3">
+                                                                        <span className={`text-xs font-medium ${isMine ? 'text-white' : 'text-zinc-700 dark:text-zinc-200'}`}>{option.text}</span>
+                                                                        <span className={`text-[11px] ${isMine ? 'text-white/80' : 'text-zinc-500 dark:text-zinc-400'}`}>{option.count} · {percentage}%</span>
+                                                                    </div>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <p className={`text-[10px] mt-2 ${isMine ? 'text-white/80' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                                                        {msg.poll.totalVotes} vote{msg.poll.totalVotes === 1 ? '' : 's'}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <p className={`text-[14px] leading-relaxed whitespace-pre-wrap break-all ${msg.deleted ? 'italic text-opacity-70' : ''}`}>
+                                                    {msg.deleted ? msg.body : renderMessageWithMentions(msg.body, isMine)}
+                                                </p>
+                                            )}
 
                                             <div className={`text-[10px] mt-1 flex justify-end gap-2 items-center ${isMine ? 'text-white/70' : 'text-zinc-500 dark:text-zinc-400'}`}>
                                                 {formatMessageTimestamp(msg.createdAt)}
@@ -623,6 +700,61 @@ export function ChatWindow({
                         ))}
                     </div>
                 )}
+
+                {isPollComposerOpen && (
+                    <div className="mb-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50 p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Create poll</p>
+                            <button
+                                onClick={resetPollComposer}
+                                className="text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                        <input
+                            value={pollQuestion}
+                            onChange={(e) => setPollQuestion(e.target.value)}
+                            placeholder="Poll question"
+                            className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 outline-none"
+                        />
+                        <div className="space-y-1.5">
+                            {pollOptions.map((option, index) => (
+                                <input
+                                    key={index}
+                                    value={option}
+                                    onChange={(e) => {
+                                        const next = [...pollOptions];
+                                        next[index] = e.target.value;
+                                        setPollOptions(next);
+                                    }}
+                                    placeholder={`Option ${index + 1}`}
+                                    className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 outline-none"
+                                />
+                            ))}
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <button
+                                onClick={() => {
+                                    if (pollOptions.length < 6) {
+                                        setPollOptions([...pollOptions, ""]);
+                                    }
+                                }}
+                                className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline disabled:text-zinc-400"
+                                disabled={pollOptions.length >= 6}
+                            >
+                                + Add option
+                            </button>
+                            <button
+                                onClick={handleCreatePoll}
+                                disabled={pollQuestion.trim().length === 0 || pollOptions.filter((option) => option.trim().length > 0).length < 2}
+                                className="rounded-lg bg-indigo-600 px-2.5 py-1 text-[11px] font-semibold text-white disabled:bg-zinc-300 dark:disabled:bg-zinc-700"
+                            >
+                                Send poll
+                            </button>
+                        </div>
+                    </div>
+                )}
                 
                 <div className="flex items-center gap-2 rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800 px-3 py-2">
                     <input
@@ -661,6 +793,16 @@ export function ChatWindow({
                         title="Analyze this conversation"
                     >
                         Analyze
+                    </button>
+                    <button
+                        onClick={() => setIsPollComposerOpen((prev) => !prev)}
+                        className={`px-2 py-1 text-[10px] font-bold border rounded-lg transition-colors ${isPollComposerOpen
+                            ? 'text-indigo-600 dark:text-indigo-300 border-indigo-400 dark:border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30'
+                            : 'text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-700 border-zinc-200 dark:border-zinc-600 hover:text-indigo-600 dark:hover:text-indigo-300 hover:border-indigo-400 dark:hover:border-indigo-500'
+                        }`}
+                        title="Create a poll"
+                    >
+                        Poll
                     </button>
                     <select
                         className="bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 rounded-lg px-2 py-1 text-[10px] font-bold text-zinc-500 dark:text-zinc-400 outline-none focus:border-indigo-500 dark:focus:border-indigo-500 transition-colors cursor-pointer"

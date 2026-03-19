@@ -39,7 +39,7 @@ export const useUIStore = create<UIState>()(
             setIsSettingsOpen: (isOpen: boolean) => set({ isSettingsOpen: isOpen }),
         }),
         {
-            name: 'tars-ui-storage',
+            name: 'pulse-ui-storage',
             partialize: (state) => ({
                 sidebarWidth: state.sidebarWidth,
                 uiScale: state.uiScale,

@@ -7,7 +7,7 @@ export default function CodeOfConductPage() {
           <div className="bg-indigo-600 px-8 py-10 text-white">
             <h1 className="text-3xl md:text-4xl font-black tracking-tight">Code of Conduct</h1>
             <p className="mt-3 max-w-2xl text-indigo-100 text-sm md:text-base">
-              Our standards for respectful, safe, and inclusive communication in Tars Connect.
+              Our standards for respectful, safe, and inclusive communication in Pulse Connect.
             </p>
           </div>
 
@@ -66,7 +66,7 @@ export default function CodeOfConductPage() {
               <section className="space-y-2">
                 <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">6. Report Concerns</h2>
                 <p>
-                  If you experience or witness misconduct, contact: conduct@tarssocial.com.
+                  If you experience or witness misconduct, contact: conduct@pulseconnect.app.
                   Include relevant context so we can review quickly.
                 </p>
               </section>

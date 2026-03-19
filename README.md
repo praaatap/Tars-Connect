@@ -1,6 +1,6 @@
-# Tars Connect
+# Pulse Connect
 
-Tars Connect is a real-time chat application built for fast and smooth communication. It features a modern interface inspired by WhatsApp, providing a familiar and premium user experience.
+Pulse Connect is a real-time chat application built for fast and smooth communication. It features a modern interface inspired by WhatsApp, providing a familiar and premium user experience.
 
 ## Architecture
 
@@ -46,7 +46,7 @@ The application is built using a modern full-stack web architecture:
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd tars-connect
+   cd pulse-connect
    ```
 
 2. **Install dependencies**:

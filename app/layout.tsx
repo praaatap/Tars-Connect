@@ -15,13 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tars Connect",
-  description: "A Tars Connect is a tool that allows you to connect to your Tars Members",
+  title: "Pulse Connect",
+  description: "Pulse Connect helps your team communicate and collaborate in real time.",
   icons: {
     icon: "/favicon.png",
   },
   openGraph: {
-    title: "Tars Connect",
+    title: "Pulse Connect",
     description: "Connect instantly. Collaborate effortlessly.",
     type: "website",
   },
